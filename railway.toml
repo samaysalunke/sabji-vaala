@@ -2,11 +2,11 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "python puch_compliant_server.py"
+startCommand = "python final_mcp_server.py"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "always"
 
 [env]
 NIXPACKS_PYTHON_VERSION = "3.11"
-NIXPACKS_INSTALL_CMD = "pip install -r requirements-puch.txt"
+NIXPACKS_INSTALL_CMD = "pip install -r requirements-railway.txt"

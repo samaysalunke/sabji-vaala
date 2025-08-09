@@ -1,1 +1,1 @@
-web: python puch_compliant_server.py
+web: python final_mcp_server.py
