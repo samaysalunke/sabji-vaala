@@ -3,7 +3,7 @@ services:
 - name: mcp-server
   source_dir: /
   github:
-    repo: your-username/sabjiGPT
+    repo: samaysalunke/sabji-vaala
     branch: main
   run_command: python run_automated_system.py --mcp-only
   environment_slug: python
@@ -24,7 +24,7 @@ jobs:
 - name: price-scraper
   source_dir: /
   github:
-    repo: your-username/sabjiGPT
+    repo: samaysalunke/sabji-vaala
     branch: main
   run_command: python src/scheduler/automated_scraper.py --run-once
   environment_slug: python

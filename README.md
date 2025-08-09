@@ -1,255 +1,219 @@
-# 🥬 SabjiGPT - Mandi Price API
+# 🥬 SabjiGPT - Indian Vegetable Price Intelligence
 
-Real-time vegetable price data from Indian mandi markets, scraped from Agmarknet.
+> Real-time vegetable price data from Indian agricultural markets through AI-powered scraping and MCP integration
 
-## ✨ Features
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com)
+[![MCP](https://img.shields.io/badge/MCP-Protocol-orange.svg)](https://puch.ai/mcp)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-- **Real-time Prices**: Live vegetable prices from 10+ major Indian cities
-- **Smart Caching**: Multi-tier caching (memory → database → fresh scrape)
-- **RESTful API**: Clean JSON API with comprehensive documentation
-- **20 Vegetables**: Support for commonly used vegetables with Hindi name recognition
-- **Rate Limited**: Respectful scraping with exponential backoff
-- **MCP Ready**: Built with MCP (Model Context Protocol) integration in mind
+## 🎯 **What is SabjiGPT?**
 
-## 🚀 Quick Start
+SabjiGPT is an intelligent system that scrapes live vegetable prices from [Agmarknet.gov.in](https://agmarknet.gov.in) and provides the data through:
+- **🤖 AI Assistant Integration** via Model Context Protocol (MCP)
+- **📅 Automated Data Collection** twice daily (9 AM & 6 PM IST)
+- **🔍 Natural Language Queries** like "What's the price of onions in Mumbai?"
 
-### Installation
+## ✨ **Features**
 
+- 🥬 **Real-time Price Data** for tomatoes, onions, and potatoes
+- 🏙️ **10+ Major Cities** across India (Mumbai, Delhi, Pune, Bengaluru, etc.)
+- 🕒 **Automated Scraping** twice daily for fresh market data
+- 🔌 **Puch AI Integration** through MCP protocol
+- 💾 **SQLite Database** with price history and trends
+- ⚡ **Smart Caching** for faster API responses
+- 🛡️ **Production Ready** with Docker, Railway, Render support
+
+## 🚀 **Quick Start**
+
+### **1. Clone & Setup**
 ```bash
-# Clone repository
-git clone <repo-url>
-cd sabjiGPT
-
-# Create virtual environment
-python3 -m venv venv
+git clone https://github.com/samaysalunke/sabji-vaala.git
+cd sabji-vaala
+python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Install Playwright browsers
-playwright install chromium
+playwright install
 ```
 
-### Start the API Server
-
+### **2. Test the Scraper**
 ```bash
-# Activate virtual environment
-source venv/bin/activate
-
-# Start server
-python -m uvicorn src.api.main:app --reload
-
-# Server will be available at http://localhost:8000
+python run_automated_system.py --test-scrape
 ```
 
-### Test with Sample Data
+Expected output:
+```
+✅ Test SUCCESSFUL!
+   Price: ₹2.0/kg
+   Market: Indapur
+   Source: agmarknet.gov.in
+```
 
+### **3. Run Complete System**
 ```bash
-# Add test data (for demo purposes)
-python -c "from test_api import populate_test_data; populate_test_data()"
-
-# Test API
-curl -X POST "http://localhost:8000/price" \
-     -H "Content-Type: application/json" \
-     -d '{"city": "Mumbai", "vegetable": "tomato"}'
+# Runs both scheduler (9AM & 6PM) and MCP server (port 8087)
+python run_automated_system.py
 ```
 
-## 📖 API Documentation
+## 🔌 **Puch AI Integration**
 
-### Interactive Docs
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+### **Deploy to Production** (5 minutes)
+1. **Railway** (Recommended): [railway.app](https://railway.app)
+2. **Render**: [render.com](https://render.com)
+3. **DigitalOcean**: [digitalocean.com](https://digitalocean.com)
 
-### Key Endpoints
-
-#### Get Vegetable Price
-```bash
-POST /price
-Content-Type: application/json
-
-{
-  "city": "Mumbai",
-  "vegetable": "tomato",
-  "language": "en"
-}
+### **Connect to Puch AI**
+```
+/mcp connect https://your-app.railway.app/mcp sabji_gpt_secret_2025
 ```
 
-**Response:**
-```json
-{
-  "city": "mumbai",
-  "vegetable": "tomato", 
-  "price": 25.50,
-  "price_per": "kg",
-  "currency": "INR",
-  "market": "Mumbai Central Market",
-  "updated_at": "2025-08-09T17:18:41",
-  "source": "agmarknet.gov.in",
-  "cache_status": "database"
-}
-```
+### **Try These Queries**
+- "What's the current price of onions in Mumbai?"
+- "Compare tomato prices across Indian cities" 
+- "Show me all vegetable prices in Delhi"
+- "What are the latest market trends?"
 
-#### Health Check
-```bash
-GET /health
-```
+## 📊 **API Endpoints**
 
-#### List Supported Vegetables
-```bash
-GET /vegetables
-```
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check and system status |
+| `/` | GET | API information and available tools |
+| `/mcp` | POST | MCP protocol endpoint for AI integration |
 
-#### List Supported Cities  
-```bash
-GET /cities
-```
+## 🛠️ **MCP Tools**
 
-#### Get All Prices for a City
-```bash
-GET /city/{city}/prices
-```
+1. **`get_vegetable_price`** - Get live prices for specific vegetable/city
+2. **`get_city_prices`** - All vegetable prices for a city
+3. **`compare_vegetable_prices`** - Price comparison across cities
+4. **`get_market_trends`** - Market insights and database stats
 
-#### Get Prices Across Cities for a Vegetable
-```bash
-GET /vegetable/{vegetable}/prices
-```
-
-## 🏙️ Supported Cities
-
-- Mumbai
-- Delhi
-- Bengaluru/Bangalore
-- Hyderabad
-- Chennai
-- Kolkata
-- Pune
-- Ahmedabad
-- Jaipur
-- Lucknow
-
-## 🥕 Supported Vegetables
-
-- Tomato (टमाटर)
-- Potato (आलू)
-- Onion (प्याज)
-- Cauliflower (फूलगोभी)
-- Cabbage (पत्तागोभी)
-- Carrot (गाजर)
-- Green Peas (हरी मटर)
-- Spinach (पालक)
-- Okra/Bhindi (भिंडी)
-- Brinjal/Eggplant (बैंगन)
-
-*Note: Vegetable names are normalized - you can use Hindi names, common variants, etc.*
-
-## 🏗️ Architecture
+## 🏗️ **Architecture**
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   FastAPI       │    │   Cache Layer   │    │   Database      │
-│   Server        │◄──►│   (Memory)      │◄──►│   (SQLite)      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │
-         ▼
-┌─────────────────┐    ┌─────────────────┐
-│   Scraper       │◄──►│   Agmarknet     │
-│   (Playwright)  │    │   Website       │
-└─────────────────┘    └─────────────────┘
+┌─────────────────┐    MCP Protocol     ┌─────────────────┐
+│   Puch AI       │ ───────────────────► │ MCP Server      │
+│   Assistant     │                     │ Port 8087       │
+└─────────────────┘                     └─────────┬───────┘
+                                                  │
+                  ┌─────────────────┐             │
+                  │   Scheduler     │◄────────────┤
+                  │   9AM & 6PM     │             │
+                  └─────────┬───────┘             │
+                            │                     │
+                            ▼                     ▼
+                  ┌─────────────────────────────────────────┐
+                  │         Core Components                 │
+                  │  ┌─────────┐ ┌──────────┐ ┌──────────┐ │
+                  │  │Scraper  │ │Database  │ │  Cache   │ │
+                  │  │(Live)   │ │(SQLite)  │ │(5 min)   │ │
+                  │  └─────────┘ └──────────┘ └──────────┘ │
+                  └─────────────────┬───────────────────────┘
+                                    │
+                                    ▼
+                          ┌─────────────────┐
+                          │ Agmarknet.gov.in│
+                          │ Live Data Source│
+                          └─────────────────┘
 ```
 
-### Data Flow
-1. **API Request** → Check cache (5min TTL)
-2. **Cache Miss** → Check database (6hr freshness)
-3. **Stale Data** → Scrape fresh data from Agmarknet
-4. **Fresh Data** → Save to database → Cache response
+## 🗂️ **Project Structure**
 
-## 🔧 Development
-
-### Project Structure
 ```
-sabjiGPT/
+sabji-vaala/
 ├── src/
-│   ├── api/           # FastAPI server
-│   ├── scraper/       # Agmarknet scraper
-│   ├── database/      # SQLite database layer
-│   ├── cache/         # In-memory cache
-│   ├── data/          # Vegetable/city mappings
-│   └── mcp/           # MCP server (coming soon)
-├── tests/             # Test files
-├── requirements.txt   # Dependencies
-└── README.md         # This file
+│   ├── scraper/          # Web scraping logic
+│   ├── database/         # SQLite database operations
+│   ├── api/             # FastAPI server
+│   ├── cache/           # Response caching
+│   ├── data/            # City/vegetable mappings
+│   ├── scheduler/       # Automated scraping
+│   └── mcp/             # MCP server for AI integration
+├── deploy/              # Production deployment files
+├── run_automated_system.py  # Main system runner
+├── requirements.txt     # Python dependencies
+└── README.md           # This file
 ```
 
-### Run Tests
+## 🌐 **Supported Markets**
+
+### **Cities**
+Mumbai, Delhi, Pune, Bengaluru, Hyderabad, Chennai, Kolkata, Ahmedabad, Jaipur, Lucknow
+
+### **Vegetables**
+Tomato, Onion, Potato (more coming soon!)
+
+## 📈 **Usage Modes**
+
 ```bash
-# Test database
-python src/database/price_db.py
+# Complete system (scheduler + MCP server)
+python run_automated_system.py
 
-# Test cache
-python src/cache/simple_cache.py
+# MCP server only (for AI integration)
+python run_automated_system.py --mcp-only
 
-# Test scraper (when Agmarknet is available)
-python src/scraper/agmarknet_scraper.py
+# Scheduler only (automated data collection)
+python run_automated_system.py --scheduler-only
 
-# Test API with sample data
-python test_api.py
+# One-time test scrape
+python run_automated_system.py --test-scrape
 ```
 
-### Debug Scraper
+## 🐳 **Docker Deployment**
+
 ```bash
-# Explore Agmarknet structure
-python src/scraper/explore_agmarknet.py
+# Build and run
+docker-compose up -d
 
-# Debug form interactions
-python src/scraper/debug_scraper.py
+# Check logs
+docker-compose logs -f
+
+# Stop
+docker-compose down
 ```
 
-## 🚨 Important Notes
+## 🔧 **Configuration**
 
-### Rate Limiting
-- Scraper includes delays and exponential backoff
-- Respects Agmarknet's servers
-- Uses caching to minimize requests
+Environment variables (`.env`):
+```bash
+AUTH_TOKEN=sabji_gpt_secret_2025
+MCP_PORT=8087
+SCRAPE_HEADLESS=true
+LOG_LEVEL=INFO
+DATABASE_PATH=mandi_prices.db
+CACHE_TTL_MINUTES=5
+```
 
-### Data Availability
-- Vegetable prices aren't always available for all cities
-- Data depends on market reporting to Agmarknet
-- API returns 404 when no data is available
+## 📚 **Documentation**
 
-### Production Considerations
-- Use PostgreSQL for production database
-- Add Redis for distributed caching
-- Implement proper monitoring and logging
-- Use background job queues for scraping
-- Add authentication for admin endpoints
+- **[Setup Guide](SETUP.md)** - Detailed installation and usage
+- **[Production Guide](PRODUCTION.md)** - Deploy to Railway, Render, VPS
+- **[API Documentation](src/api/)** - FastAPI endpoints and schemas
 
-## 🔮 Coming Soon
-
-- **MCP Server**: Model Context Protocol integration for AI assistants
-- **Webhook Support**: Real-time price alerts
-- **Historical Data**: Price trends and analytics
-- **More Markets**: Additional wholesale markets beyond Agmarknet
-- **Mobile API**: Optimized endpoints for mobile apps
-
-## 🤝 Contributing
+## 🤝 **Contributing**
 
 1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open Pull Request
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
-## 📄 License
+## 📄 **License**
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## 🙏 **Acknowledgments**
 
-- **Agmarknet.gov.in**: Source of vegetable price data
-- **FastAPI**: For the excellent web framework
-- **Playwright**: For reliable web scraping
+- **[Agmarknet.gov.in](https://agmarknet.gov.in)** - Government of India's agricultural marketing platform
+- **[Puch AI](https://puch.ai)** - AI assistant platform with MCP support
+- **[TurboML MCP Starter](https://github.com/TurboML-Inc/mcp-starter)** - MCP implementation reference
+
+## 🚨 **Disclaimer**
+
+This project is for educational and research purposes. Always respect the terms of service of scraped websites and use responsibly.
 
 ---
 
-**Made with ❤️ for Indian farmers, consumers, and developers**
+**Made with ❤️ for Indian farmers and vegetable price transparency**
+
+🌟 **Star this repo if you find it useful!** 🌟

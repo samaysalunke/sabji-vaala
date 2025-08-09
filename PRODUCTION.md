@@ -211,7 +211,7 @@ sudo -u sabji bash << 'EOF'
 cd /opt/sabjiGPT
 
 # Clone repository
-git clone https://github.com/your-username/sabjiGPT.git .
+git clone https://github.com/samaysalunke/sabji-vaala.git .
 
 # Setup virtual environment
 python3 -m venv venv
