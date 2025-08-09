@@ -1,0 +1,28 @@
+# Puch AI Compliant MCP Server Dependencies
+# Following official TurboML MCP starter requirements
+
+# FastMCP - Official Puch AI MCP library
+fastmcp>=0.1.0
+
+# Core MCP Protocol
+mcp>=1.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+
+# Pydantic for data validation
+pydantic>=2.5.0
+
+# HTTP client
+httpx>=0.25.0
+
+# HTML/Markdown processing
+markdownify>=0.11.0
+readabilipy>=0.2.0
+beautifulsoup4>=4.12.0
+
+# For auth
+cryptography>=41.0.0
+
+# Image processing (optional)
+Pillow>=10.0.0
