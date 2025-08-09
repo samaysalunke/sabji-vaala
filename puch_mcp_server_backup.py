@@ -114,19 +114,6 @@ TOOLS = [
                 }
             },
             "required": ["vegetable"]
-        }    },
-    {
-        "name": "validate",
-        "description": "Validate bearer token and return server owner's phone number (required by Puch AI)",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "token": {
-                    "type": "string",
-                    "description": "Bearer token to validate"
-                }
-            },
-            "required": ["token"]
         }
     }
 ]
@@ -194,16 +181,6 @@ Mumbai, Delhi, Pune, Bengaluru, Hyderabad, Chennai
 
 📞 **Technical Support**: {MY_NUMBER}
 """
-
-
-def execute_validate(token: str) -> str:
-    """Validate bearer token and return phone number (required by Puch AI)"""
-    
-    if token == AUTH_TOKEN:
-        # Return phone number in required format: {country_code}{number}
-        return MY_NUMBER  # 919998881729
-    else:
-        return "Invalid token"
 
 def execute_compare_vegetable_prices(vegetable: str) -> str:
     """Compare vegetable prices across cities"""
@@ -320,7 +297,7 @@ async def mcp_endpoint(request: Request, authorization: str = Header(None)):
                 "jsonrpc": "2.0",
                 "id": request_id,
                 "result": {
-                    "protocolVersion": "2025-06-18",
+                    "protocolVersion": "2024-11-05",
                     "capabilities": {
                         "tools": {"listChanged": False}
                     },
@@ -365,10 +342,6 @@ async def mcp_endpoint(request: Request, authorization: str = Header(None)):
             elif tool_name == "compare_vegetable_prices":
                 vegetable = arguments.get("vegetable", "tomato")
                 result = execute_compare_vegetable_prices(vegetable)
-                
-            elif tool_name == "validate":
-                token = arguments.get("token", "")
-                result = execute_validate(token)
                 
             else:
                 return JSONResponse(content={
