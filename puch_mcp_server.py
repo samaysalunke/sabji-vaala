@@ -257,25 +257,46 @@ async def health():
 
 # MCP endpoint (following TurboML exact pattern)
 @app.post("/mcp")
-async def mcp_endpoint(request: MCPRequest, authorization: str = Header(None)):
+async def mcp_endpoint(request: Request, authorization: str = Header(None)):
     """MCP protocol endpoint"""
     
     # Verify authentication
     verify_bearer_token(authorization)
     
-    logger.info(f"MCP request: {request.method}")
-    
+    # Parse request body manually to handle any format
     try:
+        body = await request.json()
+        logger.info(f"MCP request body: {body}")
+        
+        # Extract method and params
+        method = body.get("method", "")
+        params = body.get("params", {})
+        request_id = body.get("id", "1")
+        
+        logger.info(f"MCP method: {method}, params: {params}")
+        
+    except Exception as e:
+        logger.error(f"Failed to parse request: {e}")
+        return JSONResponse(
+            status_code=400,
+            content={
+                "jsonrpc": "2.0",
+                "error": {"code": -32700, "message": "Parse error"},
+                "id": None
+            }
+        )
+    
         # Initialize handshake
-        if request.method == "initialize":
-            client_info = request.params.get("clientInfo", {}) if request.params else {}
-            protocol_version = request.params.get("protocolVersion", "2024-11-05") if request.params else "2024-11-05"
+        if method == "initialize":
+            client_info = params.get("clientInfo", {})
+            protocol_version = params.get("protocolVersion", "2024-11-05")
             
             logger.info(f"MCP Initialize from {client_info.get('name', 'unknown')}")
             
-            return MCPResponse(
-                id=request.id,
-                result={
+            return JSONResponse(content={
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "result": {
                     "protocolVersion": "2024-11-05",
                     "capabilities": {
                         "tools": {"listChanged": False}
@@ -285,23 +306,28 @@ async def mcp_endpoint(request: MCPRequest, authorization: str = Header(None)):
                         "version": "1.0.0"
                     }
                 }
-            )
+            })
         
         # Ping
-        elif request.method == "ping":
-            return MCPResponse(id=request.id, result={})
+        elif method == "ping":
+            return JSONResponse(content={
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "result": {}
+            })
         
         # Tools list
-        elif request.method == "tools/list":
-            return MCPResponse(
-                id=request.id,
-                result={"tools": TOOLS}
-            )
+        elif method == "tools/list":
+            return JSONResponse(content={
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "result": {"tools": TOOLS}
+            })
         
         # Tool calls
-        elif request.method == "tools/call":
-            tool_name = request.params.get("name") if request.params else None
-            arguments = request.params.get("arguments", {}) if request.params else {}
+        elif method == "tools/call":
+            tool_name = params.get("name")
+            arguments = params.get("arguments", {})
             
             logger.info(f"Calling tool: {tool_name} with args: {arguments}")
             
@@ -318,34 +344,52 @@ async def mcp_endpoint(request: MCPRequest, authorization: str = Header(None)):
                 result = execute_compare_vegetable_prices(vegetable)
                 
             else:
-                return MCPResponse(
-                    id=request.id,
-                    error={"code": -32601, "message": f"Unknown tool: {tool_name}"}
-                )
+                return JSONResponse(content={
+                    "jsonrpc": "2.0",
+                    "id": request_id,
+                    "error": {"code": -32601, "message": f"Unknown tool: {tool_name}"}
+                })
             
-            return MCPResponse(
-                id=request.id,
-                result={"content": [{"type": "text", "text": result}]}
-            )
+            return JSONResponse(content={
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "result": {"content": [{"type": "text", "text": result}]}
+            })
         
         else:
-            return MCPResponse(
-                id=request.id,
-                error={"code": -32601, "message": f"Method not found: {request.method}"}
-            )
+            return JSONResponse(content={
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "error": {"code": -32601, "message": f"Method not found: {method}"}
+            })
     
     except Exception as e:
         logger.error(f"MCP error: {e}")
-        return MCPResponse(
-            id=request.id,
-            error={"code": -32603, "message": f"Internal error: {str(e)}"}
-        )
+        return JSONResponse(content={
+            "jsonrpc": "2.0",
+            "id": request_id,
+            "error": {"code": -32603, "message": f"Internal error: {str(e)}"}
+        })
 
 # Additional endpoints that Puch AI might check
+@app.get("/mcp")
+async def mcp_get():
+    """Handle GET requests to /mcp endpoint - shows server info"""
+    return {
+        "server": "SabjiGPT MCP Server",
+        "version": "1.0.0",
+        "protocol": "MCP 2024-11-05", 
+        "methods": ["POST"],
+        "tools": len(TOOLS),
+        "auth": "Bearer token required",
+        "contact": MY_NUMBER,
+        "status": "active"
+    }
+
 @app.options("/mcp")
 async def mcp_options():
     """Handle preflight requests"""
-    return {"methods": ["POST"], "protocol": "MCP", "version": "2024-11-05"}
+    return {"methods": ["GET", "POST"], "protocol": "MCP", "version": "2024-11-05"}
 
 if __name__ == "__main__":
     print("🌟 SabjiGPT MCP Server for Puch AI")
