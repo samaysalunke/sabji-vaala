@@ -1,1 +1,1 @@
-web: python railway_server.py
+web: python puch_mcp_server.py
