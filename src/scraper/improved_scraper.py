@@ -35,11 +35,22 @@ class ImprovedAgmarknetScraper:
         """
         logger.info(f"🥬 Getting {vegetable} price for {city}...")
         
+        # Import city mappings
+        from src.data.vegetables import normalize_city_name
+        
+        # Get state and district for the city
+        city_mapping = normalize_city_name(city)
+        if not city_mapping:
+            logger.error(f"❌ Unsupported city: {city}")
+            return None
+        
+        state_name, district_name = city_mapping
+        
         # Map vegetables to their commodity values (from exploration)
         commodity_mapping = {
             "tomato": "78",
-            "potato": "23",  # Need to verify
-            "onion": "71"    # Need to verify
+            "potato": "24",  # Verified from HTML
+            "onion": "23"    # Verified from HTML
         }
         
         commodity_value = commodity_mapping.get(vegetable.lower())
@@ -61,14 +72,29 @@ class ImprovedAgmarknetScraper:
                 page.select_option('select#ddlCommodity', value=commodity_value)
                 time.sleep(1)
                 
-                # Select state (Maharashtra for Mumbai)
-                logger.info("🏛️ Selecting Maharashtra...")
-                page.select_option('select#ddlState', value='MH')
+                # Select state based on city mapping
+                logger.info(f"🏛️ Selecting {state_name} state...")
+                page.select_option('select#ddlState', value=state_name)
                 time.sleep(3)  # Wait for AJAX district loading
                 
-                # Select Mumbai district
-                logger.info("🏙️ Selecting Mumbai district...")
-                page.select_option('select#ddlDistrict', value='10')
+                # Find and select the correct district
+                logger.info(f"🏙️ Looking for {district_name} district...")
+                district_options = page.query_selector_all('select#ddlDistrict option')
+                district_value = None
+                
+                for option in district_options:
+                    value = option.get_attribute('value')
+                    text = option.inner_text().strip()
+                    if district_name.lower() in text.lower() or text.lower() in district_name.lower():
+                        district_value = value
+                        logger.info(f"✅ Found district: {text} = {value}")
+                        break
+                
+                if not district_value:
+                    logger.error(f"❌ District {district_name} not found")
+                    return None
+                
+                page.select_option('select#ddlDistrict', value=district_value)
                 time.sleep(3)  # Wait for AJAX market loading
                 
                 # Try different markets in priority order
@@ -81,30 +107,17 @@ class ImprovedAgmarknetScraper:
                     if value and value != "0":
                         available_markets.append((value, text))
                 
-                logger.info(f"📍 Found {len(available_markets)} markets in Mumbai")
+                logger.info(f"📍 Found {len(available_markets)} markets in {city}")
                 
-                # Try markets in priority order
-                for priority_market in self.mumbai_market_priorities:
-                    for market_value, market_text in available_markets:
-                        if priority_market.lower() in market_text.lower():
-                            logger.info(f"🎯 Trying market: {market_text}")
-                            
-                            result = self._try_market(page, market_value, market_text, vegetable, city)
-                            if result:
-                                return result
-                            break
-                
-                # If priority markets don't work, try all others
-                logger.info("🔄 Trying all other markets...")
+                # Try all markets for this city
                 for market_value, market_text in available_markets:
-                    if not any(priority.lower() in market_text.lower() for priority in self.mumbai_market_priorities):
-                        logger.info(f"🎯 Trying market: {market_text}")
-                        
-                        result = self._try_market(page, market_value, market_text, vegetable, city)
-                        if result:
-                            return result
+                    logger.info(f"🎯 Trying market: {market_text}")
+                    
+                    result = self._try_market(page, market_value, market_text, vegetable, city)
+                    if result:
+                        return result
                 
-                logger.warning(f"❌ No {vegetable} price data found in any Mumbai market")
+                logger.warning(f"❌ No {vegetable} price data found in any {city} market")
                 return None
                 
             except Exception as e:
@@ -125,7 +138,7 @@ class ImprovedAgmarknetScraper:
             time.sleep(1)
             
             # Set date range (try last 7 days)
-            self._set_date_range(page, days_back=7)
+            self._set_date_range(page, "02-Aug-2025", "08-Aug-2025")
             
             # Click search
             page.click('input#btnGo')
@@ -145,84 +158,131 @@ class ImprovedAgmarknetScraper:
             logger.warning(f"⚠️ Error with market {market_text}: {e}")
             return None
     
-    def _set_date_range(self, page, days_back=7):
+    def _set_date_range(self, page, from_date="02-Aug-2025", to_date="08-Aug-2025"):
         """
-        Set date range for price search
+        Set date range for price search using DD-MMM-YYYY format
+        FIXED: Use correct field IDs - txtDate (not txtDateFrom) and txtDateTo
         """
         try:
-            today = datetime.now()
-            start_date = today - timedelta(days=days_back)
+            # Use the correct field IDs found from HTML inspection
+            logger.info(f"📅 Setting date range: {from_date} to {to_date}")
             
-            date_from = page.query_selector('input#txtDateFrom')
-            date_to = page.query_selector('input#txtDateTo')
+            # Clear and set the FROM date (txtDate)
+            page.evaluate(f'document.getElementById("txtDate").value = "{from_date}"')
             
-            if date_from:
-                date_from.fill(start_date.strftime('%d/%m/%Y'))
-                logger.info(f"📅 Set start date: {start_date.strftime('%d/%m/%Y')}")
+            # Clear and set the TO date (txtDateTo) 
+            page.evaluate(f'document.getElementById("txtDateTo").value = "{to_date}"')
             
-            if date_to:
-                date_to.fill(today.strftime('%d/%m/%Y'))
-                logger.info(f"📅 Set end date: {today.strftime('%d/%m/%Y')}")
+            # Verify the dates were set
+            actual_from = page.evaluate('document.getElementById("txtDate").value')
+            actual_to = page.evaluate('document.getElementById("txtDateTo").value')
+            
+            logger.info(f"✅ Verified dates - From: {actual_from}, To: {actual_to}")
                 
         except Exception as e:
             logger.warning(f"⚠️ Could not set date range: {e}")
     
     def _extract_price_data(self, page, market_name, vegetable, city):
         """
-        Extract price data from results table
+        Extract price data from results table - improved for live data
         """
         try:
-            # Look for the main results table
+            # Look for ALL tables and analyze them thoroughly
             tables = page.query_selector_all('table')
+            logger.info(f"📊 Analyzing {len(tables)} tables for price data...")
             
-            for table in tables:
+            for table_idx, table in enumerate(tables):
                 rows = table.query_selector_all('tr')
                 
                 if len(rows) < 2:
                     continue
                 
-                # Check if this is a price table by looking at headers
+                logger.info(f"📋 Table {table_idx + 1}: {len(rows)} rows")
+                
+                # Check header row
                 header_row = rows[0]
                 header_cells = header_row.query_selector_all('td, th')
-                header_texts = [cell.inner_text().strip().lower() for cell in header_cells]
+                header_texts = [cell.inner_text().strip() for cell in header_cells]
                 
-                # Look for price-related headers
-                if any(keyword in ' '.join(header_texts) for keyword in ['price', 'modal', 'min', 'max']):
-                    logger.info(f"📊 Found price table with headers: {header_texts}")
+                # Log the headers for debugging
+                if header_texts:
+                    logger.info(f"  Headers: {header_texts}")
+                
+                # Look for price table indicators
+                header_text_lower = ' '.join(header_texts).lower()
+                is_price_table = any(keyword in header_text_lower for keyword in [
+                    'price', 'modal', 'min', 'max', 'quintal', 'commodity', 'variety'
+                ])
+                
+                if not is_price_table:
+                    continue
+                
+                logger.info(f"✅ Price table detected in table {table_idx + 1}")
+                
+                # Process ALL data rows (not just checking for "No Data Found")
+                data_rows_found = 0
+                for row_idx, row in enumerate(rows[1:], 1):
+                    cells = row.query_selector_all('td')
+                    cell_texts = [cell.inner_text().strip() for cell in cells]
                     
-                    # Process data rows
-                    for row in rows[1:]:
-                        cells = row.query_selector_all('td')
-                        cell_texts = [cell.inner_text().strip() for cell in cells]
+                    if not cell_texts:
+                        continue
+                    
+                    logger.info(f"  Row {row_idx}: {cell_texts}")
+                    
+                    # Skip explicit "No Data Found" messages
+                    if len(cell_texts) == 1 and 'no data' in cell_texts[0].lower():
+                        logger.info("    ↳ No data message - skipping")
+                        continue
+                    
+                    # Look for rows with actual data (multiple columns)
+                    if len(cell_texts) >= 6:  # At least 6 columns for price data
+                        data_rows_found += 1
+                        logger.info(f"    ↳ Data row {data_rows_found} detected")
                         
-                        # Skip "No Data Found" rows
-                        if len(cell_texts) == 1 and 'no data' in cell_texts[0].lower():
-                            continue
+                        # Look for numeric price values
+                        price_found = None
+                        for cell_text in cell_texts:
+                            if self._is_price_value(cell_text):
+                                price = self._clean_price(cell_text)
+                                # Reasonable price range for vegetable (₹100-₹10000 per quintal)
+                                if 100 <= price <= 10000:
+                                    price_found = price
+                                    logger.info(f"    ↳ Found price: ₹{price}")
+                                    break
                         
-                        # Look for price data
-                        if len(cell_texts) >= 8:  # Typical price table has many columns
-                            # Try to find price columns (usually last few columns)
-                            for i, cell_text in enumerate(cell_texts[-5:], len(cell_texts)-5):
-                                if self._is_price_value(cell_text):
-                                    price = self._clean_price(cell_text)
-                                    if 10 <= price <= 10000:  # Reasonable range
-                                        return {
-                                            "city": city,
-                                            "vegetable": vegetable,
-                                            "price": price,
-                                            "price_per": "quintal",  # Agmarknet uses quintal
-                                            "price_per_kg": round(price / 100, 2),  # Convert to per kg
-                                            "currency": "INR",
-                                            "market": market_name,
-                                            "timestamp": datetime.now().isoformat(),
-                                            "source": "agmarknet.gov.in",
-                                            "raw_data": cell_texts
-                                        }
+                        if price_found:
+                            # Extract other data from the row
+                            market_from_row = cell_texts[3] if len(cell_texts) > 3 else market_name
+                            variety = cell_texts[5] if len(cell_texts) > 5 else "Local"
+                            
+                            result = {
+                                "city": city,
+                                "vegetable": vegetable,
+                                "price": price_found,
+                                "price_per": "quintal",  # Agmarknet uses quintal
+                                "price_per_kg": round(price_found / 100, 2),  # Convert to per kg
+                                "currency": "INR",
+                                "market": market_from_row,
+                                "variety": variety,
+                                "timestamp": datetime.now().isoformat(),
+                                "source": "agmarknet.gov.in",
+                                "raw_data": cell_texts
+                            }
+                            
+                            logger.info(f"🎉 SUCCESS: Extracted price data ₹{price_found}")
+                            return result
+                
+                if data_rows_found > 0:
+                    logger.info(f"  Found {data_rows_found} data rows but no valid prices")
+                else:
+                    logger.info("  No data rows found in this table")
             
+            logger.warning("❌ No price data found in any table")
             return None
             
         except Exception as e:
-            logger.warning(f"⚠️ Error extracting price data: {e}")
+            logger.error(f"❌ Error extracting price data: {e}")
             return None
     
     def _is_price_value(self, text):

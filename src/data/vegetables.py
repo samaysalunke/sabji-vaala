@@ -68,19 +68,19 @@ VEGETABLE_MASTER = {
     }
 }
 
-# City mappings for Agmarknet (state, district format)
+# City mappings for Agmarknet (state_code, district_name format)
 CITY_MAPPINGS = {
-    "mumbai": ("Maharashtra", "Mumbai"),
-    "delhi": ("Delhi", "Delhi"),
-    "bengaluru": ("Karnataka", "Bangalore"),
-    "bangalore": ("Karnataka", "Bangalore"),  # Alternative spelling
-    "hyderabad": ("Telangana", "Hyderabad"),
-    "chennai": ("Tamil Nadu", "Chennai"),
-    "kolkata": ("West Bengal", "Kolkata"),
-    "pune": ("Maharashtra", "Pune"),
-    "ahmedabad": ("Gujarat", "Ahmedabad"),
-    "jaipur": ("Rajasthan", "Jaipur"),
-    "lucknow": ("Uttar Pradesh", "Lucknow")
+    "mumbai": ("MH", "Mumbai"),      # Maharashtra
+    "delhi": ("DL", "Delhi"),        # NCT of Delhi  
+    "bengaluru": ("KK", "Bangalore"), # Karnataka
+    "bangalore": ("KK", "Bangalore"), # Alternative spelling
+    "hyderabad": ("TL", "Hyderabad"), # Telangana
+    "chennai": ("TN", "Chennai"),     # Tamil Nadu
+    "kolkata": ("WB", "Kolkata"),     # West Bengal
+    "pune": ("MH", "Pune"),          # Maharashtra
+    "ahmedabad": ("GJ", "Ahmedabad"), # Gujarat
+    "jaipur": ("RJ", "Jaipur"),      # Rajasthan
+    "lucknow": ("UP", "Lucknow")     # Uttar Pradesh
 }
 
 def normalize_vegetable_name(input_text: str) -> str:

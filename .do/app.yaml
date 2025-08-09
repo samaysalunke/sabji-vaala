@@ -1,0 +1,37 @@
+name: sabji-gpt
+services:
+- name: mcp-server
+  source_dir: /
+  github:
+    repo: your-username/sabjiGPT
+    branch: main
+  run_command: python run_automated_system.py --mcp-only
+  environment_slug: python
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  http_port: 8087
+  health_check:
+    http_path: /health
+  envs:
+  - key: AUTH_TOKEN
+    value: sabji_gpt_secret_2025
+  - key: MCP_PORT
+    value: "8087"
+  - key: SCRAPE_HEADLESS
+    value: "true"
+
+jobs:
+- name: price-scraper
+  source_dir: /
+  github:
+    repo: your-username/sabjiGPT
+    branch: main
+  run_command: python src/scheduler/automated_scraper.py --run-once
+  environment_slug: python
+  kind: CRON
+  schedule: "0 3,13 * * *"  # 9AM and 6PM IST
+  envs:
+  - key: AUTH_TOKEN
+    value: sabji_gpt_secret_2025
+  - key: SCRAPE_HEADLESS
+    value: "true"

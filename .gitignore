@@ -20,46 +20,57 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual environment
+# Virtual environments
 venv/
 env/
 ENV/
 
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
 
 # Logs
 *.log
 logs/
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
 # Cache
 .cache/
 .pytest_cache/
 
-# Environment variables
-.env
-.env.local
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Scraping artifacts
-screenshots/
-*.png
-*.html
-sample_*.html
-error_screenshot.png
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
 
-# Temp files
-temp/
+# Data directory
+data/
+backups/
+
+# Testing
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+
+# Temporary files
 tmp/
+temp/
+*.tmp

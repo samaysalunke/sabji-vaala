@@ -249,6 +249,12 @@ class PriceDatabase:
             logger.error(f"❌ Stats query failed: {e}")
             return {}
     
+    def get_db_stats(self) -> Dict:
+        """
+        Alias for get_stats() - for compatibility with MCP server
+        """
+        return self.get_stats()
+    
     def cleanup_old_data(self, days: int = 30):
         """
         Clean up data older than N days to keep database size manageable

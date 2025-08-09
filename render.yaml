@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: sabji-mcp-server
+    env: python
+    buildCommand: "pip install -r requirements.txt && playwright install"
+    startCommand: "python run_automated_system.py --mcp-only"
+    envVars:
+      - key: AUTH_TOKEN
+        generateValue: true
+      - key: MCP_PORT
+        value: "10000"
+      - key: SCRAPE_HEADLESS
+        value: "true"
+      - key: LOG_LEVEL
+        value: "INFO"
+    
+  - type: cron
+    name: sabji-scheduler
+    env: python
+    buildCommand: "pip install -r requirements.txt && playwright install"
+    schedule: "0 3,13 * * *"  # 9AM and 6PM IST (UTC+5:30)
+    startCommand: "python src/scheduler/automated_scraper.py --run-once"
+    envVars:
+      - key: AUTH_TOKEN
+        sync: false
+      - key: SCRAPE_HEADLESS
+        value: "true"
+      - key: LOG_LEVEL
+        value: "INFO"
