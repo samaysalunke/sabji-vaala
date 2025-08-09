@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 # Configuration
 AUTH_TOKEN = os.getenv('AUTH_TOKEN', 'sabji_gpt_secret_2025')
-MCP_PORT = int(os.getenv('MCP_PORT', 8087))
+MCP_PORT = int(os.getenv('PORT', os.getenv('MCP_PORT', 8087)))
 
 # Initialize FastAPI app
 app = FastAPI(
