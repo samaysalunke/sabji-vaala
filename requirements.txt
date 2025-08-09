@@ -1,0 +1,21 @@
+# SabjiGPT - Mandi Price Scraper Dependencies
+# Core scraping
+playwright==1.40.0
+beautifulsoup4==4.12.2
+requests==2.31.0
+
+# API and server
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.0
+
+# MCP protocol
+mcp==1.0.0
+
+# Utilities
+python-dotenv==1.0.0
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# Database (starting with SQLite)
+aiosqlite==0.19.0
