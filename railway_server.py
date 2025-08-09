@@ -109,9 +109,31 @@ async def health_check():
         "message": "SabjiGPT MCP Server is running"
     }
 
+@app.options("/mcp")
+async def mcp_options():
+    """Handle preflight requests for MCP endpoint"""
+    return {"methods": ["POST"], "protocol": "MCP", "version": "2024-11-05"}
+
+@app.get("/mcp/capabilities")
+async def mcp_capabilities():
+    """MCP server capabilities endpoint (some clients check this)"""
+    return {
+        "capabilities": {
+            "tools": {
+                "listChanged": False
+            }
+        },
+        "serverInfo": {
+            "name": "SabjiGPT",
+            "version": "1.0.0",
+            "protocol": "2024-11-05"
+        },
+        "tools": TOOLS
+    }
+
 @app.post("/mcp")
 async def mcp_handler(request: MCPRequest, authorization: str = Header(None)):
-    """Main MCP protocol handler"""
+    """Main MCP protocol handler with full MCP specification compliance"""
     
     # Verify authentication
     await verify_auth_token(authorization)
@@ -119,12 +141,50 @@ async def mcp_handler(request: MCPRequest, authorization: str = Header(None)):
     logger.info(f"MCP request: {request.method}")
     
     try:
-        if request.method == "tools/list":
+        # Initialize - Required for MCP connection handshake
+        if request.method == "initialize":
+            client_info = request.params.get("clientInfo", {}) if request.params else {}
+            protocol_version = request.params.get("protocolVersion", "2024-11-05") if request.params else "2024-11-05"
+            
+            logger.info(f"MCP Initialize request from {client_info.get('name', 'unknown')} v{client_info.get('version', 'unknown')}")
+            
+            return MCPResponse(
+                id=request.id,
+                result={
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {
+                        "tools": {
+                            "listChanged": False
+                        }
+                    },
+                    "serverInfo": {
+                        "name": "SabjiGPT",
+                        "version": "1.0.0"
+                    }
+                }
+            )
+        
+        # Notifications/initialized - Sent after initialize
+        elif request.method == "notifications/initialized":
+            logger.info("MCP client initialization completed")
+            # Notifications don't return responses, but FastAPI needs something
+            return {"status": "acknowledged"}
+        
+        # Ping - Health check mechanism
+        elif request.method == "ping":
+            return MCPResponse(
+                id=request.id,
+                result={}
+            )
+        
+        # Tools list
+        elif request.method == "tools/list":
             return MCPResponse(
                 id=request.id,
                 result={"tools": TOOLS}
             )
         
+        # Tool calls
         elif request.method == "tools/call":
             tool_name = request.params.get("name") if request.params else None
             arguments = request.params.get("arguments", {}) if request.params else {}
@@ -155,7 +215,7 @@ async def mcp_handler(request: MCPRequest, authorization: str = Header(None)):
 
 📊 **System Status**: 
 - Server: ✅ Running on Railway
-- MCP Protocol: ✅ Active
+- MCP Protocol: ✅ Active v2024-11-05
 - Authentication: ✅ Secured
 
 🌱 **Supported**: Tomato, Onion, Potato
@@ -175,6 +235,7 @@ async def mcp_handler(request: MCPRequest, authorization: str = Header(None)):
                 )
         
         else:
+            logger.warning(f"Unknown method: {request.method}")
             return MCPResponse(
                 id=request.id,
                 error={"code": -32601, "message": f"Method not found: {request.method}"}
