@@ -117,46 +117,90 @@ def execute_validate(token: str = None) -> str:
     return MY_NUMBER
 
 def execute_get_vegetable_price(city: str, vegetable: str) -> str:
-    """Get vegetable price for specific city"""
+    """Get real vegetable price using our production scraper and database"""
     
-    # Demo data with realistic Indian market prices
-    demo_prices = {
-        "mumbai": {
-            "tomato": {"price": "2800", "unit": "Rs/Quintal", "market": "Vashi Agricultural Market"},
-            "onion": {"price": "3500", "unit": "Rs/Quintal", "market": "Vashi Agricultural Market"},
-            "potato": {"price": "2200", "unit": "Rs/Quintal", "market": "Vashi Agricultural Market"}
-        },
-        "delhi": {
-            "tomato": {"price": "3200", "unit": "Rs/Quintal", "market": "Azadpur Mandi"},
-            "onion": {"price": "4000", "unit": "Rs/Quintal", "market": "Azadpur Mandi"},
-            "potato": {"price": "2500", "unit": "Rs/Quintal", "market": "Azadpur Mandi"}
-        },
-        "pune": {
-            "tomato": {"price": "2600", "unit": "Rs/Quintal", "market": "Pune Agricultural Market"},
-            "onion": {"price": "3200", "unit": "Rs/Quintal", "market": "Pune Agricultural Market"}, 
-            "potato": {"price": "2000", "unit": "Rs/Quintal", "market": "Pune Agricultural Market"}
-        }
-    }
-    
-    city_lower = city.lower()
-    vegetable_lower = vegetable.lower()
-    
-    if city_lower not in demo_prices:
-        return f"❌ City '{city}' not supported. Available: mumbai, delhi, pune"
-    
-    if vegetable_lower not in demo_prices[city_lower]:
-        return f"❌ Vegetable '{vegetable}' not supported. Available: tomato, onion, potato"
-    
-    price_data = demo_prices[city_lower][vegetable_lower]
-    
-    result = f"""🍅 The current price of {vegetable} in {city.title()} is ₹{price_data['price']} per quintal, as of today, at the {price_data['market']}.
+    try:
+        # Import our real production modules
+        import sys
+        import os
+        sys.path.append(os.path.dirname(__file__))
+        
+        from src.database.price_db import PriceDatabase
+        from src.scraper.improved_scraper import ImprovedAgmarknetScraper
+        from datetime import datetime, timedelta
+        
+        city_lower = city.lower()
+        vegetable_lower = vegetable.lower()
+        
+        # Step 1: Check database for recent data (within last 24 hours)
+        db = PriceDatabase()
+        recent_data = db.get_latest_price(city_lower, vegetable_lower)
+        
+        if recent_data:
+            # Check if data is recent (within 24 hours)
+            scraped_time = datetime.fromisoformat(recent_data['scraped_at'])
+            if datetime.now() - scraped_time < timedelta(hours=24):
+                db.close()
+                
+                result = f"""🍅 The current price of {vegetable} in {city.title()} is ₹{recent_data['price']} per {recent_data['price_per']}, from {recent_data['market']}.
 
-This information is sourced from the Indian Agricultural Marketing (Agmarknet).
+Last updated: {scraped_time.strftime('%Y-%m-%d %I:%M %p')}
+Source: {recent_data['source']}
 
-Please note that this is demo data, and a fully functional system would provide live, scraped data from government markets. Is there anything else I can help you with?"""
-    
-    logger.info(f"✅ Returning price for {vegetable} in {city}: {price_data['price']} Rs/Quintal")
-    return result
+This is live data from Indian agricultural markets. Need prices for other vegetables or cities?"""
+                
+                logger.info(f"✅ Returning database price for {vegetable} in {city}: {recent_data['price']}")
+                return result
+        
+        # Step 2: Fresh scrape if no recent data
+        logger.info(f"🔄 Fetching fresh data for {vegetable} in {city}")
+        scraper = ImprovedAgmarknetScraper()
+        fresh_data = scraper.get_vegetable_price(city_lower, vegetable_lower, headless=True)
+        
+        if fresh_data:
+            # Save to database
+            db.insert_price(fresh_data)
+            db.close()
+            
+            result = f"""🍅 The current price of {vegetable} in {city.title()} is ₹{fresh_data['price']} per {fresh_data.get('price_per', 'kg')}, from {fresh_data.get('market', 'Agricultural Market')}.
+
+Just updated: {datetime.now().strftime('%Y-%m-%d %I:%M %p')}
+Source: {fresh_data.get('source', 'agmarknet.gov.in')}
+
+This is live data freshly scraped from government agricultural markets. Need prices for other vegetables?"""
+            
+            logger.info(f"✅ Returning fresh scraped price for {vegetable} in {city}: {fresh_data['price']}")
+            return result
+        
+        else:
+            # Fallback to basic message if no data available
+            db.close()
+            supported_combinations = [
+                "tomato in mumbai", "onion in pune", "potato in delhi",
+                "tomato in delhi", "potato in bangalore", "onion in mumbai"
+            ]
+            
+            result = f"""📭 Sorry, no current price data is available for {vegetable} in {city} right now.
+
+This could be because:
+• Markets are closed (weekend/holiday)
+• Data hasn't been updated today
+• This combination isn't tracked yet
+
+Try these popular combinations: {', '.join(supported_combinations[:3])}
+
+Need help with anything else?"""
+            
+            logger.info(f"❌ No data found for {vegetable} in {city}")
+            return result
+            
+    except Exception as e:
+        logger.error(f"❌ Error getting price data: {e}")
+        return f"""🔧 Having trouble accessing live price data right now. 
+
+The system is working on updating prices from agricultural markets. Please try again in a few minutes, or ask for a different vegetable/city combination.
+
+Need help with market trends instead?"""
 
 def execute_get_market_trends() -> str:
     """Get market trends and insights for vegetable prices"""

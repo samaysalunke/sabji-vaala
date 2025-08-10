@@ -1,5 +1,17 @@
-# Minimal dependencies for Railway deployment
+# Railway deployment dependencies - NOW WITH REAL DATA!
+# Core MCP server
 fastapi>=0.104.0
 uvicorn>=0.24.0
 pydantic>=2.5.0
 python-dotenv>=1.0.0
+
+# Real data scraping (our production system!)
+playwright>=1.40.0
+beautifulsoup4>=4.12.0
+requests>=2.31.0
+
+# Database for real price storage
+aiosqlite>=0.19.0
+
+# For scraper functionality
+schedule>=1.2.0
