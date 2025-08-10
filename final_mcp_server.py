@@ -149,14 +149,11 @@ def execute_get_vegetable_price(city: str, vegetable: str) -> str:
     
     price_data = demo_prices[city_lower][vegetable_lower]
     
-    result = f"""🥬 **{vegetable.title()} Price in {city.title()}**
+    result = f"""🍅 The current price of {vegetable} in {city.title()} is ₹{price_data['price']} per quintal, as of today, at the {price_data['market']}.
 
-💰 **Current Price**: {price_data['price']} {price_data['unit']}
-🏪 **Market**: {price_data['market']}
-📅 **Date**: Today (Demo Data)
-🌟 **Source**: Indian Agricultural Marketing (Agmarknet)
+This information is sourced from the Indian Agricultural Marketing (Agmarknet).
 
-*Note: This is demo data. Full system includes live scraping from government markets.*"""
+Please note that this is demo data, and a fully functional system would provide live, scraped data from government markets. Is there anything else I can help you with?"""
     
     logger.info(f"✅ Returning price for {vegetable} in {city}: {price_data['price']} Rs/Quintal")
     return result
@@ -164,30 +161,15 @@ def execute_get_vegetable_price(city: str, vegetable: str) -> str:
 def execute_get_market_trends() -> str:
     """Get market trends and insights for vegetable prices"""
     
-    result = """📊 **Indian Vegetable Market Trends**
+    result = """📊 Here are the current Indian vegetable market trends:
 
-🔥 **Hot Markets Today**:
-• Mumbai: High demand for tomatoes (₹2800/Q)
-• Delhi: Onion prices stabilizing (₹4000/Q) 
-• Pune: Potato supply improving (₹2000/Q)
+🔥 Hot markets today - Mumbai has high demand for tomatoes (₹2800/quintal), Delhi's onion prices are stabilizing at ₹4000/quintal, and Pune's potato supply is improving at ₹2000/quintal.
 
-📈 **Price Trends**:
-• Tomatoes: Moderate prices across metros
-• Onions: Seasonal price fluctuation
-• Potatoes: Good supply, stable prices
+📈 Price trends show tomatoes at moderate prices across metros, onions experiencing seasonal fluctuation, and potatoes with good supply and stable prices.
 
-🌾 **System Status**:
-• Database: Active (Demo Mode)
-• Markets Covered: 6 major cities
-• Vegetables Tracked: 3 major commodities
-• Last Update: Live (Demo Data)
+💡 Market insight: Best prices are typically found in Pune, while Mumbai has premium pricing due to logistics, and Delhi shows the highest price volatility.
 
-💡 **Market Insights**:
-• Best prices typically found in Pune
-• Mumbai has premium pricing due to logistics
-• Delhi shows highest price volatility
-
-*Powered by SabjiGPT - Live Agricultural Market Data*"""
+Our system currently covers 6 major cities and tracks 3 major commodities. Would you like specific price information for any vegetable or city?"""
     
     logger.info("✅ Returning market trends and insights")
     return result
@@ -224,23 +206,15 @@ def execute_compare_vegetable_prices(vegetable: str) -> str:
     # Find cheapest city
     cheapest_city = min(prices.keys(), key=lambda city: int(prices[city].replace('₹', '').replace('/Q', '')))
     
-    result = f"""🔍 **{vegetable.title()} Price Comparison Across Cities**
+    result = f"""🔍 Here's the {vegetable} price comparison across major Indian cities:
 
-🏙️ **City-wise Prices**:
-• Mumbai: {prices['mumbai']} 
-• Delhi: {prices['delhi']}
-• Pune: {prices['pune']}
+Mumbai: {prices['mumbai']} | Delhi: {prices['delhi']} | Pune: {prices['pune']}
 
-💰 **Best Deal**: {cheapest_city.title()} - {prices[cheapest_city]}
+💰 Best deal: {cheapest_city.title()} offers the lowest price at {prices[cheapest_city]}, while Delhi has the highest rates.
 
-📊 **Price Analysis**:
-• Highest: Delhi
-• Lowest: {cheapest_city.title()}
-• Average Market Price: ₹{sum(int(p.replace('₹', '').replace('/Q', '')) for p in prices.values()) // len(prices)}/Q
+The average market price is ₹{sum(int(p.replace('₹', '').replace('/Q', '')) for p in prices.values()) // len(prices)} per quintal.
 
-🚚 **Savings Tip**: Consider sourcing from {cheapest_city.title()} for bulk purchases
-
-*Data from Indian Agricultural Marketing Centers*"""
+💡 Tip: For bulk purchases, consider sourcing from {cheapest_city.title()} for maximum savings. Need prices for other vegetables or cities?"""
     
     logger.info(f"✅ Returning price comparison for {vegetable}")
     return result
